@@ -270,9 +270,25 @@ async def main(argv):
     app.exec()
 
     edges = editor.scene.edges
+    edge_dict = {}
+    for s in sensors:
+        edge_dict[s["name"]] = {}
+        edge_dict[s["name"]]["out"] = []
+
     for e in edges:
+        edge_dict[e.start.entry.name]["out"].append(e.end.entry.name)
         print(f"{e.start.entry.name} -> {e.end.entry.name}")
 
+    for s in sensors:
+        for ss in sensors:
+            if ss in s["out"] and not ss['name'] in edge_dict[s["name"]]["out"]:
+                print(f"{s['name']} has been disconnected from {ss['name']}")
+                await mc.commands.send_cmd(s['key'], f"setperm {ss['key']} 3")
+            if not ss in s["out"] and ss['name'] in edge_dict[s['name']]['out']:
+                print(f"{s['name']} has been connected to {ss['name']}")
+                await mc.commands.send_cmd(s['key'], f"setperm {ss['key']} 195")
+                # we should also set the reciprocal path ...
+            
 def cli():
     try:
         asyncio.run(main(sys.argv[1:]))
