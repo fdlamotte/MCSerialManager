@@ -38,6 +38,10 @@ sensors = {}
 streamout = sys.stdout
 streamin = sys.stdin
 
+def printout(str):
+    streamout.write(f"{str}\n")
+    streamout.flush()
+
 def edges_dict():
     new_edges = {}
     for s in sensors.items():
@@ -55,7 +59,7 @@ def connected():
     for s in edges.items():
         for o in dict(s[1]).items():
             if not o[0] in sensors[s[0]]:
-                streamout.write(f"connect {s[0]};{o[0]}\n")
+                printout(f"connect {s[0]};{o[0]}")
                 sensors[s[0]][o[0]] = True
 
 def disconnected():
@@ -63,7 +67,7 @@ def disconnected():
     for s in sensors.items():
         for o in dict(s[1]).items():
             if not o[0] in edges[s[0]]:
-                streamout.write(f"disconnect {s[0]};{o[0]}\n") 
+                printout(f"disconnect {s[0]};{o[0]}") 
                 del s[1][o[0]]
 
 def eval_line(line):
@@ -100,7 +104,7 @@ def main(args):
     if len(args) > 0:
         print("starting process")
         p = subprocess.Popen(args, 
-                bufsize=1,
+                #bufsize=1,
                 close_fds=True,
                 universal_newlines=True, 
                 stdout=subprocess.PIPE,
@@ -123,7 +127,10 @@ def main(args):
     editor.show()
     app.exec()
 
-    streamout.write("q\n")
+    if p.poll() is None:
+        printout("q")
+        if p:
+            p.terminate()
 
 def cli():
     try:
