@@ -129,8 +129,6 @@ def main(args):
 
     if p.poll() is None:
         printout("q")
-        if p:
-            p.terminate()
 
 def cli():
     try:
