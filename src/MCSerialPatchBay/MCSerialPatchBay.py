@@ -4,6 +4,8 @@
 """
 import os, sys
 import time, datetime
+import subprocess
+import traceback
 
 from QNodeEditor import Node, Edge, Entry
 from PyQt5.QtWidgets import QApplication
@@ -33,6 +35,9 @@ editor.scene.add_nodes([outputs, inputs])
 
 sensors = {}
 
+streamout = sys.stdout
+streamin = sys.stdin
+
 def edges_dict():
     new_edges = {}
     for s in sensors.items():
@@ -50,7 +55,7 @@ def connected():
     for s in edges.items():
         for o in dict(s[1]).items():
             if not o[0] in sensors[s[0]]:
-                print(f"connect {s[0]};{o[0]}")
+                streamout.write(f"connect {s[0]};{o[0]}\n")
                 sensors[s[0]][o[0]] = True
 
 def disconnected():
@@ -58,7 +63,7 @@ def disconnected():
     for s in sensors.items():
         for o in dict(s[1]).items():
             if not o[0] in edges[s[0]]:
-                print(f"disconnect {s[0]};{o[0]}") 
+                streamout.write(f"disconnect {s[0]};{o[0]}\n") 
                 del s[1][o[0]]
 
 def eval_line(line):
@@ -86,22 +91,39 @@ class WorkerThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
  
     def run(self):
-        while True:
-            eval_line(sys.stdin.readline().rstrip('\n'))
+        for l in streamin:
+            eval_line(l.rstrip('\n'))
 
 def main(args):
-    cont = True
-    while True:
-        line = sys.stdin.readline().rstrip('\n')
+    global streamin, streamout
+
+    if len(args) > 0:
+        print("starting process")
+        p = subprocess.Popen(args, 
+                bufsize=1,
+                close_fds=True,
+                universal_newlines=True, 
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE)
+        #p = os.popen(args[0], 'r')
+        streamin = p.stdout
+        streamout = p.stdin
+
+    print("init loop")
+    for l in streamin:
+        line = l.rstrip('\n')
         if line == "r" or line == "ready":
             break # end of init phase
         eval_line(line)
 
+    print("starting")
     worker = WorkerThread()
     worker.start()
 
     editor.show()
     app.exec()
+
+    streamout.write("q\n")
 
 def cli():
     try:

@@ -46,6 +46,10 @@ def usage () :
     """ Prints some help """
     version()
 
+def printout(str):
+    sys.stdout.write(f"{str}\n")
+    sys.stdout.flush() 
+
 async def main(argv):
     """ Do the job """
     json_output = JSON
@@ -204,7 +208,7 @@ async def main(argv):
             if not a is None: # could reach sensor
                 s["acl"] = a
                 sensors[s["name"]] = s
-                print(f"sensor {s['name']}")
+                printout(f"sensor {s['name']}")
 
     # compute links
     for sens in sensors.items():
@@ -215,9 +219,9 @@ async def main(argv):
                 ss=ss_[1]
                 if o["key"] == ss["key"][0:12] and o["perm"] & 0xc0 == 0xc0:
                     s["out"].append(ss)
-                    print(f"link {s['name']};{ss['name']}")
+                    printout(f"link {s['name']};{ss['name']}")
 
-    print("ready")
+    printout("ready")
 
     # loop
     while(True):
@@ -225,13 +229,13 @@ async def main(argv):
 
         if line == 'sensors':
             for s in sensors.items():
-                print(f"sensor {s[1]['name']}")
+                printout(f"sensor {s[1]['name']}")
 
         elif line == 'links':
             for s_ in sensors.items():
                 s = s_[1]
                 for o in s['out']:
-                    print(f"link {s['name']};{o['name']}")
+                    printout(f"link {s['name']};{o['name']}")
 
         elif line.startswith("connect "):
             n = line.split(" ", 1)[1].split(";")
